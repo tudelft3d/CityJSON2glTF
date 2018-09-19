@@ -76,3 +76,6 @@ Conditions for use
 This software is free to use. You are kindly asked to acknowledge its use by citing it in a research paper you are writing, reports, and/or other applicable materials.
 Yo can cite this paper: 
 
+```
+Kumar, K., Ledoux, H., and Stoter, J.: Dynamic 3D visualization of floods: case of the Netherlands, Int. Arch. Photogramm. Remote Sens. Spatial Inf. Sci., XLII-4/W10, 83-87, https://doi.org/10.5194/isprs-archives-XLII-4-W10-83-2018, 2018.
+```
