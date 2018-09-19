@@ -4,10 +4,10 @@ An experimental python utility to convert CityJSON datasets to glTF
 Things to know
 ---------------
 
-###CityJSON
+### CityJSON
 
 
-###glTF
+### glTF
 
 
 System requirements
@@ -65,8 +65,6 @@ Performance
 
 For benchmarking, I have tested the tool with a CityJSON dataset of 100 buildings and terrain with 10000 triangles, and the performance is as follows:
 
-  * Building: 0.004 seconds per building
-  * Terrain: 0.013 seconds per triangle
 
 
 Limitations
