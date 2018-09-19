@@ -1,0 +1,85 @@
+{
+  "accessors": [
+    {
+      "bufferView": 0,
+      "byteOffset": 0,
+      "componentType": 5125,
+      "count": 36,
+      "max": [
+        7
+      ],
+      "min": [
+        0
+      ],
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "count": 8,
+      "max": [
+        50.0,
+        50.0,
+        50.0
+      ],
+      "min": [
+        -50.0,
+        -50.0,
+        -50.0
+      ],
+      "type": "VEC3"
+    }
+  ],
+  "asset": {
+    "copyright": "Open data",
+    "generator": "Generated using CityJSON2glTF python utility",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 144,
+      "byteOffset": 0,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 96,
+      "byteOffset": 144,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 240,
+      "uri": "cube_bin.bin"
+    }
+  ],
+  "meshes": [
+    {
+      "name": "onebuilding",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1
+          },
+          "indices": 0
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "onebuilding"
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}
