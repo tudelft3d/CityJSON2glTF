@@ -1,5 +1,5 @@
 # CityJSON2glTF
-An experimental python utility to convert CityJSON datasets to glTF
+An experimental python utility to convert CityJSON datasets to glTF and schematically validate glTF datasets.
 
 Things to know
 ---------------
