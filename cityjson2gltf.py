@@ -11,7 +11,13 @@ import argparse
 import json
 import os
 import numpy as np
-
+import math
+ 
+try:
+    import mapbox_earcut
+except ModuleNotFoundError as e:
+    raise e
+    
 def flatten(x):
     result = []
     for el in x:
@@ -32,6 +38,7 @@ def cityjson2gltf(inputFile,outputFile):
           "buffers": [],
           "bufferViews" : [],
           "accessors" : [],
+          "materials": [],
           "meshes" : [],
           "nodes" : [],
           "scenes" : []
@@ -61,21 +68,46 @@ def cityjson2gltf(inputFile,outputFile):
     nodeList = []
     nodeCount = []
     accessorsList = []
+    matid = 0
+    materialIDs = []
+    
+    vertexlist = np.array(cj["vertices"])
+     
     for theid in cj['CityObjects']:
-#        print (theid)
         forimax2 = []
         poscount = poscount + 1
+        
+        comType = cj['CityObjects'][theid]['type']
+        if (comType == "Building" or comType == "BuildingPart" or comType == "BuildingInstallation"):
+            matid = 0
+        elif (comType == "TINRelief"):
+            matid = 1
+        elif (comType == "Road" or comType == "Railway" or comType == "TransportSquare"):
+            matid = 2
+        elif (comType == "WaterBody"):
+            matid = 3
+        elif (comType == "PlantCover" or comType == "SolitaryVegetationObject"):
+            matid = 4
+        elif (comType == "LandUse"):
+            matid = 5
+        elif (comType == "CityFurniture"):
+            matid = 6
+        elif (comType == "Bridge" or comType == "BridgePart" or comType == "BridgeInstallation" or comType == "BridgeConstructionElement"):
+            matid = 7
+        elif (comType == "Tunnel" or comType == "TunnelPart" or comType == "TunnelInstallation"):
+            matid = 8
+        elif (comType == "GenericCityObject"):
+            matid = 9
+        materialIDs.append(matid)
+
         for geom in cj['CityObjects'][theid]['geometry']:
 #            print (geom)
             flatgeom = flatten(geom["boundaries"])
             forimax.append(flatgeom)
-#            print ("\nCityJSON Indexes: ", geom["boundaries"])
-#            print ("Flattened Indexes: ", flatgeom)
             flatgeom_np = np.array(flatgeom)
             bin_geom = flatgeom_np.astype(np.uint32).tostring()
-#            print ("Binary Array: ",bin_geom)
+
             lBin.extend(bin_geom)
-#            print (len(lBin))
             
             forimax2.append(flatgeom)
             bufferView = {}
@@ -88,7 +120,7 @@ def cityjson2gltf(inputFile,outputFile):
             #meshes
             mesh = {}
             mesh["name"] = str(theid)
-            mesh["primitives"] = [{"indices": indexcount}]
+            mesh["primitives"] = [{"indices": indexcount, "material": matid}]
             meshList.append(mesh)
             
             node = {}
@@ -114,12 +146,10 @@ def cityjson2gltf(inputFile,outputFile):
     scene = {}
     scene["nodes"] = nodeCount   
      
-    ibin_length = len(lBin)
-#    print (ibin_length)
-    
+    ibin_length = len(lBin)   
     
     #vertex bufferview
-    vertexlist = np.array(cj["vertices"])
+   
     vertex_bin = vertexlist.astype(np.float32).tostring()
     lBin.extend(vertex_bin)
     vertexBuffer = {
@@ -132,10 +162,6 @@ def cityjson2gltf(inputFile,outputFile):
     cm["bufferViews"] = bufferViewList
     
     for m in meshList:
-#        print (m)
-#        print (type(m["primitives"]))
-#        print (m["primitives"][0])
-#        print (type(m["primitives"][0]))
         m["primitives"][0]["attributes"] = {"POSITION":poscount}
     cm["meshes"] = meshList
     cm["nodes"] = nodeList
@@ -163,6 +189,83 @@ def cityjson2gltf(inputFile,outputFile):
     buffer["byteLength"] = len(lBin)
     cm["buffers"] = [buffer]  
     
+    #materials
+    materialsList = [
+            {  #building red
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 1.000, 0.000, 0.000, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            },
+            {   # terrain brown
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 0.588, 0.403, 0.211, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            },
+            {  # transport grey
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 0.631, 0.607, 0.592, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            },
+            { # waterbody blue
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 0.070, 0.949, 0.972, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            },
+            { # vegetation green
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 0.000, 1.000, 0.000, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            },
+            {  # landuse yellow
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 0.909, 0.945, 0.196, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            },
+            {  # CityFurniture orange
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 0.894, 0.494, 0.145, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            },
+            { # bridge purple
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 0.466, 0.094, 0.905, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            },
+            { # tunnel black
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 0.011, 0.011, 0.007, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            },
+            { # GenericCityObject pink
+              "pbrMetallicRoughness": {
+                 "baseColorFactor":[ 0.909, 0.188, 0.827, 1.0 ],
+                 "metallicFactor": 0.5,
+                 "roughnessFactor": 1.0
+               }
+            }
+              
+    ]
+              
+    cm["materials"] = materialsList
+    
     #------ Output ------#
     json_str = json.dumps(cm, indent = 2,sort_keys=True)
     f = open(outputFile, "w")
@@ -172,7 +275,7 @@ def cityjson2gltf(inputFile,outputFile):
 #-------------start of program-------------------#
 
 print ("\n****** CityJSON2glTF Converter *******\n")  
-argparser = argparse.ArgumentParser(description='******* glTF Validator *******')
+argparser = argparse.ArgumentParser(description='******* CityJSON2glTF Converter *******')
 argparser.add_argument('-i', '--inputFilename', help='CityJSON dataset filename', required=False)
 argparser.add_argument('-o', '--outputFilename', help='glTF dataset filename', required=False)
 args = vars(argparser.parse_args())
@@ -196,4 +299,4 @@ else:
 start = time.time()
 cityjson2gltf(inputFile,outputFile)
 end = time.time()
-print ("\n Time taken for glTF validation: ",end - start, " sec")
+print ("\n Time taken for glTF generation: ",end - start, " sec")
