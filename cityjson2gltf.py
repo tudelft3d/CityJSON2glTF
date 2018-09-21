@@ -12,7 +12,7 @@ import json
 import os
 import numpy as np
 import math
- 
+
 try:
     import mapbox_earcut
 except ModuleNotFoundError as e:
@@ -26,6 +26,64 @@ def flatten(x):
         else:
             result.append(el)
     return result 
+
+
+def to_2d(p, n):
+    #-- n must be normalised
+    # p = np.array([1, 2, 3])
+    # newell = np.array([1, 3, 4.2])
+    # n = newell/sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
+    x3 = np.array([1.1, 1.1, 1.1])    #-- is this always a good value??
+    if((n==x3).all()):
+        x3 += np.array([1,2,3])
+    x3 = x3 - np.dot(x3, n) * n
+    x3 /= math.sqrt((x3**2).sum())   # make x a unit vector    
+    y3 = np.cross(n, x3)
+    return (np.dot(p, x3), np.dot(p, y3))
+
+
+def get_normal_newell(poly):
+    # find normal with Newell's method
+    n = np.array([0.0, 0.0, 0.0])
+    for i,p in enumerate(poly):
+        ne = i + 1
+        if (ne == len(poly)):
+            ne = 0
+        n[0] += ( (poly[i][1] - poly[ne][1]) * (poly[i][2] + poly[ne][2]) )
+        n[1] += ( (poly[i][2] - poly[ne][2]) * (poly[i][0] + poly[ne][0]) )
+        n[2] += ( (poly[i][0] - poly[ne][0]) * (poly[i][1] + poly[ne][1]) )
+       
+    n = n / math.sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2])    
+    return n
+
+def triangulate_face(face, vnp):
+    if ( (len(face) == 1) and (len(face[0]) == 3) ):
+        print ("Already a triangle")
+        return face
+    sf = np.array([], dtype=np.int32)
+    for ring in face:
+        sf = np.hstack( (sf, np.array(ring)) )
+    sfv = vnp[sf]
+    rings = np.zeros(len(face), dtype=np.int32)
+    total = 0
+    for i in range(len(face)):
+        total += len(face[i])
+        rings[i] = total
+        # 1. normal with Newell's method
+    n = get_normal_newell(sfv)
+    sfv2d = np.zeros( (sfv.shape[0], 2))
+    for i,p in enumerate(sfv):
+        xy = to_2d(p, n)
+        sfv2d[i][0] = xy[0]
+        sfv2d[i][1] = xy[1]
+    result = mapbox_earcut.triangulate_float32(sfv2d, rings)
+
+    for i,each in enumerate(result):    
+        result[i] = int(sf[each])           
+        
+#    print (type(result.reshape(-1, 3).tolist()[0][0]))
+    return result.reshape(-1, 3).tolist()
+
 
 def cityjson2gltf(inputFile,outputFile):
     
@@ -102,7 +160,30 @@ def cityjson2gltf(inputFile,outputFile):
 
         for geom in cj['CityObjects'][theid]['geometry']:
 #            print (geom)
-            flatgeom = flatten(geom["boundaries"])
+            if geom['type'] == "Solid":
+                print (geom['type'])
+                triList = []
+                for shell in geom['boundaries']:
+                    for face in shell:
+                        tri = triangulate_face(face, vertexlist)
+                        for t in tri:
+#                            print ("hi", type(t[0]))
+                            triList.append(list(t))
+                trigeom = (flatten(triList))
+                print (trigeom)
+                
+            elif (geom['type'] == 'MultiSurface') or (geom['type'] == 'CompositeSurface'):   
+                print (geom['type'])
+                triList = []
+                for face in geom['boundaries']:
+#                    print (face)
+                    tri = triangulate_face(face, vertexlist)
+                    for t in tri:
+#                        print ("hi", type(t[0]))
+                        triList.append(t)
+                trigeom = (flatten(triList))
+ 
+            flatgeom = trigeom
             forimax.append(flatgeom)
             flatgeom_np = np.array(flatgeom)
             bin_geom = flatgeom_np.astype(np.uint32).tostring()
@@ -136,8 +217,8 @@ def cityjson2gltf(inputFile,outputFile):
             accessor["componentType"] = 5125
             accessor["count"] = len(flatten(forimax2))
             accessor["type"] = "SCALAR"
-            accessor["max"] = [ max(flatten(forimax2)) ]
-            accessor["min"] = [ min(flatten(forimax2)) ]
+            accessor["max"] = [ int(max(flatten(forimax2))) ]
+            accessor["min"] = [ int(min(flatten(forimax2))) ]
             accessorsList.append(accessor)
             
             indexcount = indexcount + 1
@@ -175,11 +256,10 @@ def cityjson2gltf(inputFile,outputFile):
       "componentType" : 5126,
       "count" : len(cj["vertices"]),
       "type" : "VEC3",
-      "max" : [np.amax(np.asarray(cj["vertices"]), axis=0)[0], np.amax(np.asarray(cj["vertices"]), axis=0)[1],np.amax(np.asarray(cj["vertices"]), axis=0)[2]], #max(cj["vertices"]),
-      "min" : [np.amin(np.asarray(cj["vertices"]), axis=0)[0], np.amin(np.asarray(cj["vertices"]), axis=0)[1], np.amin(np.asarray(cj["vertices"]), axis=0)[2]] #min(cj["vertices"])
+      "max" : [float(np.amax(np.asarray(cj["vertices"]), axis=0)[0]), float(np.amax(np.asarray(cj["vertices"]), axis=0)[1]),float(np.amax(np.asarray(cj["vertices"]), axis=0)[2])], #max(cj["vertices"]),
+      "min" : [float(np.amin(np.asarray(cj["vertices"]), axis=0)[0]), float(np.amin(np.asarray(cj["vertices"]), axis=0)[1]), float(np.amin(np.asarray(cj["vertices"]), axis=0)[2])] #min(cj["vertices"])
     })
     cm["accessors"] = accessorsList
-    
     binf.write(lBin)
     binf.close()  
     
@@ -266,7 +346,9 @@ def cityjson2gltf(inputFile,outputFile):
               
     cm["materials"] = materialsList
     
+#    print (cm)
     #------ Output ------#
+#    print ((cm))
     json_str = json.dumps(cm, indent = 2,sort_keys=True)
     f = open(outputFile, "w")
     f.write(json_str)
