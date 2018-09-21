@@ -238,7 +238,6 @@ def cityjson2gltf(inputFile,outputFile):
     ibin_length = len(lBin)   
     
     #vertex bufferview
-   
     vertex_bin = vertexlist.astype(np.float32).tostring()
     lBin.extend(vertex_bin)
     vertexBuffer = {
@@ -348,13 +347,11 @@ def cityjson2gltf(inputFile,outputFile):
                  "metallicFactor": 0.5,
                  "roughnessFactor": 1.0
                }
-            }
-              
+            }     
     ]
               
     cm["materials"] = materialsList
     
-#    print (cm)
     #------ Output ------#
 #    print ((cm))
     json_str = json.dumps(cm, indent = 2,sort_keys=True)
