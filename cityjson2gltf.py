@@ -58,7 +58,7 @@ def get_normal_newell(poly):
 
 def triangulate_face(face, vnp):
     if ( (len(face) == 1) and (len(face[0]) == 3) ):
-        print ("Already a triangle")
+#        print ("Already a triangle")
         return face
     sf = np.array([], dtype=np.int32)
     for ring in face:
@@ -120,7 +120,7 @@ def cityjson2gltf(inputFile,outputFile):
     #index bufferview
     bufferViewList = []
     meshList = []
-    forimax = []
+    
     poscount = 0
     indexcount = 0
     nodeList = []
@@ -132,65 +132,73 @@ def cityjson2gltf(inputFile,outputFile):
     vertexlist = np.array(cj["vertices"])
      
     for theid in cj['CityObjects']:
+        forimax = []
         forimax2 = []
-        poscount = poscount + 1
         
-        comType = cj['CityObjects'][theid]['type']
-        if (comType == "Building" or comType == "BuildingPart" or comType == "BuildingInstallation"):
-            matid = 0
-        elif (comType == "TINRelief"):
-            matid = 1
-        elif (comType == "Road" or comType == "Railway" or comType == "TransportSquare"):
-            matid = 2
-        elif (comType == "WaterBody"):
-            matid = 3
-        elif (comType == "PlantCover" or comType == "SolitaryVegetationObject"):
-            matid = 4
-        elif (comType == "LandUse"):
-            matid = 5
-        elif (comType == "CityFurniture"):
-            matid = 6
-        elif (comType == "Bridge" or comType == "BridgePart" or comType == "BridgeInstallation" or comType == "BridgeConstructionElement"):
-            matid = 7
-        elif (comType == "Tunnel" or comType == "TunnelPart" or comType == "TunnelInstallation"):
-            matid = 8
-        elif (comType == "GenericCityObject"):
-            matid = 9
-        materialIDs.append(matid)
+        if len(cj['CityObjects'][theid]['geometry'])!= 0: 
+            
+            comType = cj['CityObjects'][theid]['type']
+            if (comType == "Building" or comType == "BuildingPart" or comType == "BuildingInstallation"):
+                matid = 0
+            elif (comType == "TINRelief"):
+                matid = 1
+            elif (comType == "Road" or comType == "Railway" or comType == "TransportSquare"):
+                matid = 2
+            elif (comType == "WaterBody"):
+                matid = 3
+            elif (comType == "PlantCover" or comType == "SolitaryVegetationObject"):
+                matid = 4
+            elif (comType == "LandUse"):
+                matid = 5
+            elif (comType == "CityFurniture"):
+                matid = 6
+            elif (comType == "Bridge" or comType == "BridgePart" or comType == "BridgeInstallation" or comType == "BridgeConstructionElement"):
+                matid = 7
+            elif (comType == "Tunnel" or comType == "TunnelPart" or comType == "TunnelInstallation"):
+                matid = 8
+            elif (comType == "GenericCityObject"):
+                matid = 9
+            materialIDs.append(matid)
 
-        for geom in cj['CityObjects'][theid]['geometry']:
-#            print (geom)
-            if geom['type'] == "Solid":
-                print (geom['type'])
-                triList = []
-                for shell in geom['boundaries']:
-                    for face in shell:
+        
+            for geom in cj['CityObjects'][theid]['geometry']:
+#                print (geom)
+                poscount = poscount + 1
+                if geom['type'] == "Solid":
+#                    print (geom['type'])
+                    triList = []
+                    for shell in geom['boundaries']:
+                        for face in shell:
+                            tri = triangulate_face(face, vertexlist)
+                            for t in tri:
+#                                print ("hi", type(t[0]))
+                                triList.append(list(t))
+                    trigeom = (flatten(triList))
+#                print (trigeom)
+                
+                elif (geom['type'] == 'MultiSurface') or (geom['type'] == 'CompositeSurface'):   
+#                    print (geom['type'])
+                    triList = []
+                    for face in geom['boundaries']:
+#                        print (face)
                         tri = triangulate_face(face, vertexlist)
                         for t in tri:
 #                            print ("hi", type(t[0]))
-                            triList.append(list(t))
-                trigeom = (flatten(triList))
-                print (trigeom)
-                
-            elif (geom['type'] == 'MultiSurface') or (geom['type'] == 'CompositeSurface'):   
-                print (geom['type'])
-                triList = []
-                for face in geom['boundaries']:
-#                    print (face)
-                    tri = triangulate_face(face, vertexlist)
-                    for t in tri:
-#                        print ("hi", type(t[0]))
-                        triList.append(t)
-                trigeom = (flatten(triList))
- 
-            flatgeom = trigeom
-            forimax.append(flatgeom)
-            flatgeom_np = np.array(flatgeom)
+                            triList.append(t)
+                    trigeom = (flatten(triList))
+            
+#                print (trigeom)
+                flatgeom = trigeom
+                forimax.append(flatgeom)
+#                print (forimax)
+            
+            flatgeom_np = np.array(flatten(forimax))
+#            print (flatgeom_np)
             bin_geom = flatgeom_np.astype(np.uint32).tostring()
 
             lBin.extend(bin_geom)
             
-            forimax2.append(flatgeom)
+#           forimax2.append(flatgeom)
             bufferView = {}
             bufferView["buffer"] = 0
             bufferView["byteLength"] = len(bin_geom)
@@ -215,10 +223,10 @@ def cityjson2gltf(inputFile,outputFile):
             accessor["bufferView"] = indexcount
             accessor["byteOffset"] = 0
             accessor["componentType"] = 5125
-            accessor["count"] = len(flatten(forimax2))
+            accessor["count"] = len(flatten(forimax))
             accessor["type"] = "SCALAR"
-            accessor["max"] = [ int(max(flatten(forimax2))) ]
-            accessor["min"] = [ int(min(flatten(forimax2))) ]
+            accessor["max"] = [ int(max(flatten(forimax))) ]
+            accessor["min"] = [ int(min(flatten(forimax))) ]
             accessorsList.append(accessor)
             
             indexcount = indexcount + 1
