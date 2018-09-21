@@ -111,7 +111,7 @@ def cityjson2gltf(inputFile,outputFile):
     cm["asset"]        =  asset
     
     #buffers and bufferViews
-    head, tail = os.path.split(os.path.splitext(inputFile)[0])
+    head, tail = os.path.split(os.path.splitext(outputFile)[0])
     bufferbin = tail +"_bin.bin" 
     print ("Buffer (*.bin) file: ", bufferbin)
     binf = open(bufferbin, "wb") 
