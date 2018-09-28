@@ -4,11 +4,13 @@ An experimental python utility to convert CityJSON datasets to glTF and schemati
 Things to know
 ---------------
 
-### CityJSON
+### CityJSON 
 
+[CityJSON](http://www.cityjson.org) is a format for encoding a subset of the CityGML data model using JSON (JavaScript Object Notation). It offers an alternative to the GML encoding of CityGML.
 
 ### glTF
 
+A [glTF]( https://www.khronos.org/gltf/) asset is represented by a JSON based scene description file and a binary (.bin) file containing the geometry (vertices, indexes and/or animation data) of the asset.
 
 System requirements
 ---------------------
@@ -18,13 +20,12 @@ Python packages:
 + [json](https://docs.python.org/3/library/json.html)
 + [jsonSchema](https://pypi.org/project/jsonschema/)
 + [numpy](http://docs.scipy.org/doc/numpy/user/install.html) (likely already on your system)
-+ [Itertools](https://github.com/Toblerity/Shapely)
 + [argparse](https://docs.python.org/3/library/argparse.html)
 + [time](https://docs.python.org/3/library/time.html)
 
 ### OS and Python version
   
-The software has been developed on Mac OSX in Python 3.6, and has not been tested with other configurations. Hence, it is possible that some of the functions will not work on Windows.
+The software has been developed on Mac OSX in Python 3.7, and has not been tested with other configurations. Hence, it is possible that some of the functions will not work on Windows.
 
 How to use?
 -----------
@@ -41,6 +42,7 @@ CityJSON requirements
 
 Mandatory:
 
++ LOD1 CityJSON files (works with LOD2 or higher too but does not thematically differentiate surfaces such as roofs, walls, etc.)
 + CityJSON version 0.7 or higher (We did not test files with version < 0.7)
 + Files must end with `.json`, or `.JSON`
 + Your files must be valid (see the next section)
@@ -59,17 +61,6 @@ To validate your glTF files against the schema (1.0 or 2.0) you can use our [Val
 ```
 python3 glTF_schema_validator.py -i /path/to/COLLADAfile/ -schema /path/to/glTFschema/
 ```
-
-Performance
-------------
-
-For benchmarking, I have tested the tool with a CityJSON dataset of 100 buildings and terrain with 10000 triangles, and the performance is as follows:
-
-
-
-Limitations
-------------
-
 
 Conditions for use
 ---------------------
