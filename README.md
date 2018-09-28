@@ -56,7 +56,7 @@ It can also validate CityJSON files.
 Use this tool to test your CityJSON files.
 
 ### glTF
-To validate your glTF files against the schema (1.0 or 2.0) you can use our [Validator](https://github.com/kkimmy/CityJSON2glTF/glTF_schema_validator.py).
+To validate your glTF files against the schema (1.0 or 2.0) you can use our validator.
 
 ```
 python3 glTF_schema_validator.py -i /path/to/COLLADAfile/ -schema /path/to/glTFschema/
